@@ -4,50 +4,19 @@ using System.Linq;
 
 namespace tabrath.SimpleStorage.Example
 {
-    [Serializable]
-    public class Person
-    {
-        public string Name { get; set; }
-        public int Age { get; set; }
-        public List<Person> Children { get; set; }
-        public Person Mother { get; set; }
-        public Person Father { get; set; }
-
-        public IEnumerable<Person> Siblings
-        {
-            get
-            {
-                var siblings = new List<Person>();
-
-                foreach (var sibling in Mother.Children)
-                    if (!siblings.Contains(sibling))
-                        siblings.Add(sibling);
-
-                foreach (var sibling in Father.Children)
-                    if (!siblings.Contains(sibling))
-                        siblings.Add(sibling);
-
-                return siblings;
-            }
-        }
-
-        public Person()
-        {
-            Children = new List<Person>();
-        }
-
-        public override string ToString()
-        {
-            return string.Format("{0} ({1})", Name, Age);
-        }
-    }
-
     class Program
     {
         static void Main(string[] args)
         {
             PersonTest();
+            NumbersTest();
 
+            Console.ReadLine();
+        }
+
+        // Test writing an array of numbers to disk and read back to prove that they match.
+        private static void NumbersTest()
+        {
             long[] numbers = new long[4096 * 1024];
             var random = new Random(Environment.TickCount);
 
@@ -60,10 +29,9 @@ namespace tabrath.SimpleStorage.Example
             var reloaded = SimpleStorage.Read<long[]>("numbers.data", CompressionAlgorithm.Deflate);
 
             Console.WriteLine("Numbers = {0}", numbers.SequenceEqual(reloaded) ? "equal" : "not equal");
-
-            Console.ReadLine();
         }
 
+        // Test writing an object to disk and read back, showing both original and reloaded.
         private static void PersonTest()
         {
             var dad = new Person { Name = "John Doe", Age = 52 };
@@ -85,6 +53,7 @@ namespace tabrath.SimpleStorage.Example
             Dump(reloaded);
         }
 
+        // Dump person object to screen.
         static void Dump(Person person)
         {
             Console.WriteLine("Person\n\tName: {0}\n\tAge: {1}\n\tMother: {2}\n\tFather: {3}",
@@ -100,11 +69,18 @@ namespace tabrath.SimpleStorage.Example
         }
     }
 
+    // Extension class for List<T>
     public static class ListExtensions
     {
-        public static void AddRange<T>(this List<T> list, params T[] items)
+        /// <summary>
+        /// Adds elements to the list.
+        /// </summary>
+        /// <typeparam name="T">Object</typeparam>
+        /// <param name="list">this</param>
+        /// <param name="elements">Elements to add.</param>
+        public static void AddRange<T>(this List<T> list, params T[] elements)
         {
-            list.AddRange(items);
+            list.AddRange(elements);
         }
     }
 }

@@ -9,6 +9,13 @@ namespace tabrath.SimpleStorage
     {
         private static readonly BinaryFormatter binaryFormatter = new BinaryFormatter();
 
+        /// <summary>
+        /// Write an object to a stream, with optional compression.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="stream">Destination stream.</param>
+        /// <param name="obj">Object graph.</param>
+        /// <param name="compressionAlgorithm">Compression Algorithm.</param>
         public static void Write<T>(Stream stream, T obj, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None)
         {
             if (stream == null)
@@ -30,6 +37,13 @@ namespace tabrath.SimpleStorage
             }
         }
 
+        /// <summary>
+        /// Write an object to a file, with optional compression.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filename">Destination file.</param>
+        /// <param name="obj">Object graph.</param>
+        /// <param name="compressionAlgorithm">Compression Algorithm</param>
         public static void Write<T>(string filename, T obj, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None)
         {
             if (string.IsNullOrWhiteSpace(filename))
@@ -44,6 +58,13 @@ namespace tabrath.SimpleStorage
             }
         }
 
+        /// <summary>
+        /// Read an object from a stream, with optional compression.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="stream">Source stream.</param>
+        /// <param name="compressionAlgorithm">Compression Algorithm.</param>
+        /// <returns>Object</returns>
         public static T Read<T>(Stream stream, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None)
         {
             if (stream == null)
@@ -62,6 +83,13 @@ namespace tabrath.SimpleStorage
             }
         }
 
+        /// <summary>
+        /// Read an object from a file, with optional compression.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filename">Source file.</param>
+        /// <param name="compressionAlgorithm">Compression Algorithm.</param>
+        /// <returns>Object</returns>
         public static T Read<T>(string filename, CompressionAlgorithm compressionAlgorithm = CompressionAlgorithm.None)
         {
             if (string.IsNullOrWhiteSpace(filename))
@@ -73,6 +101,13 @@ namespace tabrath.SimpleStorage
             }
         }
 
+        /// <summary>
+        /// Compress an object to a stream, with optional compression.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="stream">Destination stream.</param>
+        /// <param name="obj">Object graph.</param>
+        /// <param name="compressionAlgorithm">Compression Algorithm.</param>
         public static void Compress<T>(Stream stream, T obj, CompressionAlgorithm compressionAlgorithm)
         {
             if (stream == null)
@@ -114,6 +149,13 @@ namespace tabrath.SimpleStorage
             }
         }
 
+        /// <summary>
+        /// Decompress a stream to an object, with optional compression.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="stream">Source stream.</param>
+        /// <param name="compressionAlgorithm">Compression Algorithm.</param>
+        /// <returns>Object</returns>
         public static T Decompress<T>(Stream stream, CompressionAlgorithm compressionAlgorithm)
         {
             if (stream == null)
