@@ -2,6 +2,8 @@
 using System.IO;
 using System.IO.Compression;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace tabrath.SimpleStorage
 {
@@ -38,6 +40,35 @@ namespace tabrath.SimpleStorage
         }
 
         /// <summary>
+        /// Write an object to a stream asynchronously, with optional compression.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="stream">Destination stream.</param>
+        /// <param name="obj">Object graph.</param>
+        /// <param name="compressionAlgorithm">Compression Algorithm.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
+        public static async Task WriteAsync<T>(Stream stream, T obj, CompressionAlgorithm compressionAlgorithm, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                throw new TaskCanceledException();
+
+            if (stream == null)
+                throw new ArgumentNullException("stream");
+
+            if (obj == null)
+                throw new ArgumentNullException("obj");
+
+            if (compressionAlgorithm != CompressionAlgorithm.None)
+            {
+                await CompressAsync<T>(stream, obj, compressionAlgorithm, cancellationToken);
+            }
+            else
+            {
+                await binaryFormatter.SerializeAsync<T>(stream, obj, cancellationToken);
+            }
+        }
+
+        /// <summary>
         /// Write an object to a file, with optional compression.
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -52,9 +83,34 @@ namespace tabrath.SimpleStorage
             if (obj == null)
                 throw new ArgumentNullException("obj");
 
-            using (var stream = File.Create(filename))
+            using (var stream = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
             {
                 Write(stream, obj, compressionAlgorithm);
+            }
+        }
+
+        /// <summary>
+        /// Write an object to a file asynchronously, with optional compression.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filename">Destination file.</param>
+        /// <param name="obj">Object graph.</param>
+        /// <param name="compressionAlgorithm">Compression Algorithm</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
+        public static async Task WriteAsync<T>(string filename, T obj, CompressionAlgorithm compressionAlgorithm, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                throw new TaskCanceledException();
+
+            if (string.IsNullOrWhiteSpace(filename))
+                throw new ArgumentNullException("filename");
+
+            if (obj == null)
+                throw new ArgumentNullException("obj");
+
+            using (var stream = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous))
+            {
+                await WriteAsync(stream, obj, compressionAlgorithm, cancellationToken);
             }
         }
 
@@ -84,6 +140,32 @@ namespace tabrath.SimpleStorage
         }
 
         /// <summary>
+        /// Read an object from a stream asynchronously, with optional compression.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="stream">Source stream.</param>
+        /// <param name="compressionAlgorithm">Compression Algorithm.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
+        /// <returns>Object</returns>
+        public static Task<T> ReadAsync<T>(Stream stream, CompressionAlgorithm compressionAlgorithm, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                throw new TaskCanceledException();
+
+            if (stream == null)
+                throw new ArgumentNullException("stream");
+
+            if (compressionAlgorithm != CompressionAlgorithm.None)
+            {
+                return DecompressAsync<T>(stream, compressionAlgorithm, cancellationToken);
+            }
+            else
+            {
+                return binaryFormatter.DeserializeAsync<T>(stream, cancellationToken);
+            }
+        }
+
+        /// <summary>
         /// Read an object from a file, with optional compression.
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -95,9 +177,31 @@ namespace tabrath.SimpleStorage
             if (string.IsNullOrWhiteSpace(filename))
                 throw new ArgumentNullException("filename");
 
-            using (var stream = File.OpenRead(filename))
+            using (var stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.SequentialScan))
             {
                 return Read<T>(stream, compressionAlgorithm);
+            }
+        }
+
+        /// <summary>
+        /// Read an object from a file asynchronously, with optional compression.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="filename">Source file.</param>
+        /// <param name="compressionAlgorithm">Compression Algorithm.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
+        /// <returns>Object</returns>
+        public static Task<T> ReadAsync<T>(string filename, CompressionAlgorithm compressionAlgorithm, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                throw new TaskCanceledException();
+
+            if (string.IsNullOrWhiteSpace(filename))
+                throw new ArgumentNullException("filename");
+
+            using (var stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous))
+            {
+                return ReadAsync<T>(stream, compressionAlgorithm, cancellationToken);
             }
         }
 
@@ -150,6 +254,55 @@ namespace tabrath.SimpleStorage
         }
 
         /// <summary>
+        /// Compress an object to a stream asynchronously, with optional compression.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="stream">Destination stream.</param>
+        /// <param name="obj">Object graph.</param>
+        /// <param name="compressionAlgorithm">Compression Algorithm.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
+        public static async Task CompressAsync<T>(Stream stream, T obj, CompressionAlgorithm compressionAlgorithm, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                throw new TaskCanceledException();
+
+            if (stream == null)
+                throw new ArgumentNullException("stream");
+
+            if (obj == null)
+                throw new ArgumentNullException("obj");
+
+            Stream compressor;
+
+            switch (compressionAlgorithm)
+            {
+                case CompressionAlgorithm.Deflate:
+                    compressor = new DeflateStream(stream, CompressionLevel.Fastest, true);
+                    break;
+
+                case CompressionAlgorithm.GZip:
+                    compressor = new GZipStream(stream, CompressionLevel.Fastest, true);
+                    break;
+
+                case CompressionAlgorithm.None:
+                    throw new Exception("Decompression without a compression algorithm is, uh, not available.");
+
+                default:
+                    throw new Exception("Unknown compression algorithm.");
+            }
+
+            try
+            {
+                await binaryFormatter.SerializeAsync<T>(compressor, obj, cancellationToken);
+            }
+            finally
+            {
+                if (compressor != null)
+                    compressor.Dispose();
+            }
+        }
+
+        /// <summary>
         /// Decompress a stream to an object, with optional compression.
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -187,6 +340,55 @@ namespace tabrath.SimpleStorage
                 {
                     result = binaryFormatter.Deserialize<T>(decompressor);
                 }
+            }
+            finally
+            {
+                if (decompressor != null)
+                    decompressor.Dispose();
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Decompress a stream to an object asynchronously, with optional compression.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="stream">Source stream.</param>
+        /// <param name="compressionAlgorithm">Compression Algorithm.</param>
+        /// <param name="cancellationToken">Cancellation Token.</param>
+        /// <returns>Object</returns>
+        public static async Task<T> DecompressAsync<T>(Stream stream, CompressionAlgorithm compressionAlgorithm, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                throw new TaskCanceledException();
+
+            if (stream == null)
+                throw new ArgumentNullException("stream");
+
+            Stream decompressor;
+            T result;
+
+            switch (compressionAlgorithm)
+            {
+                case CompressionAlgorithm.Deflate:
+                    decompressor = new DeflateStream(stream, CompressionMode.Decompress, true);
+                    break;
+
+                case CompressionAlgorithm.GZip:
+                    decompressor = new GZipStream(stream, CompressionMode.Decompress, true);
+                    break;
+
+                case CompressionAlgorithm.None:
+                    throw new Exception("Decompression without a compression algorithm is, uh, not available.");
+
+                default:
+                    throw new Exception("Unknown compression algorithm.");
+            }
+
+            try
+            {
+                result = await binaryFormatter.DeserializeAsync<T>(decompressor, cancellationToken);
             }
             finally
             {
