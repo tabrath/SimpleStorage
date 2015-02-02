@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("tabrath.SimpleStorage")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Provides a simple method of saving serialized objects to disk. Supports compression.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("tabrath")]
 [assembly: AssemblyProduct("tabrath.SimpleStorage")]
-[assembly: AssemblyCopyright("Copyright © tabrath 2013")]
+[assembly: AssemblyCopyright("Copyright © tabrath 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
