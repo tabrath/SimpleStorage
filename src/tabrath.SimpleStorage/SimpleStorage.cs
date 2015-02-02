@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace tabrath.SimpleStorage
 {
+    /// <summary>
+    /// Provides methods for writing and reading objects to/from a stream or file.
+    /// </summary>
     public static class SimpleStorage
     {
         private static readonly BinaryFormatter binaryFormatter = new BinaryFormatter();
@@ -25,7 +28,7 @@ namespace tabrath.SimpleStorage
 
             if (obj == null)
                 throw new ArgumentNullException("obj");
-
+            
             if (compressionAlgorithm != CompressionAlgorithm.None)
             {
                 Compress<T>(stream, obj, compressionAlgorithm);

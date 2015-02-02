@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 
 namespace tabrath.SimpleStorage
 {
-    // Extension class for any object to support writing to disk.
+    /// <summary>
+    /// Extension class for any object to support writing to disk.
+    /// </summary>
     public static class SimpleStorageExtensions
     {
         /// <summary>

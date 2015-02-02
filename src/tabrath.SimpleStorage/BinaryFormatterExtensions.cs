@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 
 namespace tabrath.SimpleStorage
 {
-    // Extension class for System.Runtime.Serialization.Formatters.BinaryFormatter
+    /// <summary>
+    /// Extension class for System.Runtime.Serialization.Formatters.BinaryFormatter
+    /// </summary>
     public static class BinaryFormatterExtensions
     {
         /// <summary>
