@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace tabrath.SimpleStorage.Example
 {
@@ -8,9 +10,15 @@ namespace tabrath.SimpleStorage.Example
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("Running tests synchronously.");
             PersonTest();
             NumbersTest();
 
+            Console.WriteLine("Running tests asynchronously.");
+            PersonTestAsync().Wait();
+            NumbersTestAsync().Wait();
+
+            Console.WriteLine("Tests completed.");
             Console.ReadLine();
         }
 
@@ -27,6 +35,23 @@ namespace tabrath.SimpleStorage.Example
 
             numbers.Write("numbers.data", CompressionAlgorithm.Deflate);
             var reloaded = SimpleStorage.Read<long[]>("numbers.data", CompressionAlgorithm.Deflate);
+
+            Console.WriteLine("Numbers = {0}", numbers.SequenceEqual(reloaded) ? "equal" : "not equal");
+        }
+
+        // Test writing an array of numbers to disk and read back to prove that they match asynchronously.
+        private static async Task NumbersTestAsync()
+        {
+            long[] numbers = new long[4096 * 1024];
+            var random = new Random(Environment.TickCount);
+
+            for (int i = 0; i < numbers.Length; i++)
+            {
+                numbers[i] = random.Next();
+            }
+
+            await numbers.WriteAsync("numbers.data", CompressionAlgorithm.Deflate, CancellationToken.None);
+            var reloaded = await SimpleStorage.ReadAsync<long[]>("numbers.data", CompressionAlgorithm.Deflate, CancellationToken.None);
 
             Console.WriteLine("Numbers = {0}", numbers.SequenceEqual(reloaded) ? "equal" : "not equal");
         }
@@ -48,6 +73,28 @@ namespace tabrath.SimpleStorage.Example
 
             me.Write("people.data", CompressionAlgorithm.GZip);
             var reloaded = SimpleStorage.Read<Person>("people.data", CompressionAlgorithm.GZip);
+
+            Console.Write("Reloaded ");
+            Dump(reloaded);
+        }
+
+        // Test writing an object to disk and read back, showing both original and reloaded asynchronously.
+        private static async Task PersonTestAsync()
+        {
+            var dad = new Person { Name = "John Doe", Age = 52 };
+            var mom = new Person { Name = "Jane Doe", Age = 48 };
+            var me = new Person { Name = "Johnny Doe", Age = 23, Mother = mom, Father = dad };
+            var sister = new Person { Name = "Jenny Doe", Age = 26, Mother = mom, Father = dad };
+            var brother = new Person { Name = "Jerome Doe", Age = 19, Mother = mom, Father = dad };
+
+            dad.Children.AddRange(me, sister, brother);
+            mom.Children.AddRange(me, sister, brother);
+
+            Console.Write("Original ");
+            Dump(me);
+
+            await me.WriteAsync("people.data", CompressionAlgorithm.GZip, CancellationToken.None);
+            var reloaded = await SimpleStorage.ReadAsync<Person>("people.data", CompressionAlgorithm.GZip, CancellationToken.None);
 
             Console.Write("Reloaded ");
             Dump(reloaded);
